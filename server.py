@@ -10,21 +10,27 @@ img = "caracteres/009.png"
 
 class S(BaseHTTPRequestHandler):
     def do_POST(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json')
-        self.end_headers()
+        if self.path == '/execute/watson':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
 
-        with open(img, 'rb') as fp:
-            response = requests.post(
-                conf.watson_url,
-                files=dict(upload=fp),
-                headers={'Authorization': conf.watson_token})
+            with open(img, 'rb') as fp:
+                response = requests.post(
+                    conf.watson_url,
+                    files=dict(upload=fp),
+                    headers={'Authorization': conf.watson_token})
 
-            r = json.loads(response.text)
-            to_return = json.dumps(r['results'][0])
+                r = json.loads(response.text)
+                to_return = json.dumps(r['results'][0])
 
-        self.wfile.write(bytes(to_return, "utf-8"))
-        logging.info(" [status:200] [license_plate:" + str(r['results'][0]['plate']) + "] [score:" + str(r['results'][0]['score']) + "]")
+            self.wfile.write(bytes(to_return, "utf-8"))
+            logging.info(" [status:200] [license_plate:" + str(r['results'][0]['plate']) + "] [score:" + str(r['results'][0]['score']) + "]")
+        else:
+            self.send_response(404)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(bytes("{\"message\": \"Not found\"}", "utf-8"))
 
 def run(server_class=HTTPServer, handler_class=S, port=port):
     logging.basicConfig(level=logging.INFO)
