@@ -7,6 +7,7 @@ import cv2
 import json
 import requests
 import conf
+import time
 
 app = Flask(__name__)
 random_min = 1000000000
@@ -14,8 +15,9 @@ random_max = 9999999999
 
 @app.route('/execute/watson', methods=['POST'])
 def test():
+    start = time.time()
     r = request
-    nparr = np.fromstring(r.data, np.uint8)
+    nparr = np.fromstring(r.files.get('patente').read(), np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
     img_name = 'platesimg/' + str(randint(random_min, random_max)) + '.jpg'
@@ -28,9 +30,12 @@ def test():
             headers={'Authorization': conf.watson_token})
 
     r = json.loads(response.text)
+    r['results'][0]['model'] = 'watson'
     to_return = json.dumps(r['results'][0])
     response_pickled = jsonpickle.encode(r['results'][0])
 
+    end = time.time()
+    print("Response time: " + str(end - start))
     return Response(response=response_pickled, status=200, mimetype="application/json")
 
 app.run(host="0.0.0.0", port=8088)
